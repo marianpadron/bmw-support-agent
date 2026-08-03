@@ -2,6 +2,7 @@ import Groq from "groq-sdk";
 import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
 import type { ServiceCase } from "./cases";
 import { executeTool, toolDefinitions, type ToolContext } from "./tools";
+import { debug } from "./debug";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -30,6 +31,8 @@ export interface AgentResult {
     proposedCase?: CaseProposal;
     nextStepOptions?: CaseProposal;
     profile?: CustomerProfile;
+    feedbackRequested?: boolean;
+    vehicleToConfirm?: string;
   };
 }
 
@@ -48,8 +51,11 @@ const SYSTEM_PROMPT = `
 
   VEHICLE IDENTIFICATION:
 
-  * Before troubleshooting or providing maintenance instructions, determine the specific BMW model the user is referring to.
-  * If the user has not provided the vehicle model, ask them to specify it before proceeding.
+  * Before troubleshooting or providing maintenance instructions, always verify which vehicle the user is asking about.
+  * If a KNOWN CUSTOMER VEHICLE is on file but the user has not restated it in this conversation, call confirm_vehicle with that vehicle — the UI shows Yes/No buttons. Ask one short confirmation question and end your turn. Never assume the saved vehicle is the one they mean now.
+  * Once the user confirms (button or message), proceed and do not ask again in this conversation.
+  * If the user says it is a different vehicle, ask which vehicle, then call remember_vehicle with the correction.
+  * If no vehicle is known at all, ask the user to specify it before proceeding.
   * If additional vehicle information is required by the knowledge base to identify the correct procedure (such as model year, engine, generation, or drivetrain), ask for the necessary information.
   * Do not assume the vehicle model, engine, year, or configuration.
   * If the specified BMW model/configuration does not exist in the knowledge base, tell the user that the knowledge base does not contain information for that vehicle and create a service request.
@@ -58,8 +64,9 @@ const SYSTEM_PROMPT = `
   RESPONSE FLOW FOR REPORTED ISSUES (symptoms, problems, "my car is doing X"):
 
   * Search the knowledge base first, as always.
-  * Your first response after retrieving knowledge must contain ONLY a brief diagnosis summary: 2-4 sentences on what is likely happening and why, citing the source titles used. Do NOT include step-by-step instructions, tool lists, or repair tables in this response.
-  * In that same turn, call offer_next_steps so the customer can choose between creating a service case or attempting the fix themselves.
+  * Your first response after retrieving knowledge must contain ONLY a brief diagnosis summary: 2-3 sentences on what is likely happening and why. Do NOT include step-by-step instructions, tool lists, or repair tables in this response.
+  * End that summary with your recommendation: one or two sentences saying whether this looks like something the customer can reasonably tackle themselves (mention the difficulty) or whether you recommend professional service. Base the recommendation on the retrieved knowledge (difficulty, tools required, safety notes, professional-only designations).
+  * In that same turn, call offer_next_steps so the customer can choose between creating a service case or attempting the fix themselves. The choice is always theirs — your recommendation guides, it does not decide.
   * If the customer chooses to fix it themselves (via button or their own message), THEN provide the full step-by-step instructions from the knowledge base.
   * If the customer chooses a service case, the UI creates it automatically.
   * EXCEPTIONS — skip offer_next_steps:
@@ -110,6 +117,12 @@ const SYSTEM_PROMPT = `
   * When a case has been created, provide the case ID and explain the next step.
   * When the customer asks about their previous, existing, or open service requests, call get_service_case_history and summarize each case in plain text (ID, vehicle, issue, status, date). If there are none, say so plainly.
 
+  FEEDBACK:
+
+  * After delivering full step-by-step repair instructions, or after confirming a service case was created, call request_feedback in that same turn so the customer can rate the experience.
+  * Do not ask for a rating in your text; the UI shows the rating buttons.
+  * Do not call request_feedback after clarifying questions, partial answers, or diagnosis summaries.
+
   STYLE:
 
   * Respond in plain conversational text only. Never use markdown formatting: no asterisks for bold or italics, no # headings, no tables, no bullet-point symbols, no code blocks, no horizontal rules.
@@ -137,18 +150,6 @@ function toGroqMessages(messages: ChatMessage[]): ChatCompletionMessageParam[] {
   return messages.map((m) => ({ role: m.role, content: m.content }));
 }
 
-// Set AGENT_DEBUG=false to silence. On by default so `npm run dev` shows the
-// agent's reasoning process (tool calls, args, results) in the terminal.
-const DEBUG = process.env.AGENT_DEBUG !== "false";
-
-function debug(label: string, data?: unknown) {
-  if (!DEBUG) return;
-  if (data === undefined) {
-    console.log(`[agent] ${label}`);
-  } else {
-    console.log(`[agent] ${label}`, data);
-  }
-}
 
 function truncate(value: unknown, max = 300): string {
   const text = typeof value === "string" ? value : JSON.stringify(value);
@@ -192,25 +193,52 @@ export function stripMarkdown(text: string): string {
   );
 }
 
-// Models occasionally emit a malformed tool call that Groq rejects with
-// code "tool_use_failed" (a model output problem, not a request problem),
-// so one retry usually succeeds.
-async function createCompletionWithRetry(
+interface AssembledTurn {
+  content: string;
+  toolCalls: { id: string; name: string; arguments: string }[];
+}
+
+// Every call streams: we can't know a turn is final until we see whether it
+// contains tool calls, so tool-call deltas are assembled silently while any
+// text deltas are forwarded to onDelta as they arrive.
+// Also retries on "tool_use_failed" (a malformed model tool call — a model
+// output problem, not a request problem), but only if nothing was streamed yet.
+async function streamCompletion(
   groq: Groq,
   conversation: ChatCompletionMessageParam[],
+  onDelta?: (text: string) => void,
   retries = 2
-) {
+): Promise<AssembledTurn> {
   for (let attempt = 0; ; attempt++) {
+    let content = "";
+    const toolCalls: AssembledTurn["toolCalls"] = [];
     try {
-      return await groq.chat.completions.create({
+      const stream = await groq.chat.completions.create({
         model: MODEL,
         messages: conversation,
         tools: toolDefinitions,
         tool_choice: "auto",
+        stream: true,
       });
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta;
+        if (!delta) continue;
+        if (delta.content) {
+          content += delta.content;
+          onDelta?.(delta.content);
+        }
+        for (const tc of delta.tool_calls ?? []) {
+          const i = tc.index ?? 0;
+          toolCalls[i] ??= { id: "", name: "", arguments: "" };
+          if (tc.id) toolCalls[i].id = tc.id;
+          if (tc.function?.name) toolCalls[i].name += tc.function.name;
+          if (tc.function?.arguments) toolCalls[i].arguments += tc.function.arguments;
+        }
+      }
+      return { content, toolCalls: toolCalls.filter(Boolean) };
     } catch (error) {
       const code = (error as { error?: { error?: { code?: string } } })?.error?.error?.code;
-      if (code === "tool_use_failed" && attempt < retries) {
+      if (code === "tool_use_failed" && attempt < retries && content.length === 0) {
         debug(`tool_use_failed from model, retrying (attempt ${attempt + 1}/${retries})`);
         continue;
       }
@@ -222,7 +250,8 @@ async function createCompletionWithRetry(
 export async function runAgent(
   messages: ChatMessage[],
   profile: CustomerProfile = {},
-  caseHistory: ServiceCase[] = []
+  caseHistory: ServiceCase[] = [],
+  onDelta?: (text: string) => void
 ): Promise<AgentResult> {
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -248,29 +277,34 @@ export async function runAgent(
   const meta: AgentResult["meta"] = { toolCallsMade: [] };
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
-    debug(`--- iteration ${i + 1}/${MAX_ITERATIONS}: calling Groq ---`);
-    const response = await createCompletionWithRetry(groq, conversation);
+    debug(`--- iteration ${i + 1}/${MAX_ITERATIONS}: calling Groq (streaming) ---`);
+    const turn = await streamCompletion(groq, conversation, onDelta);
 
-    const message = response.choices[0].message;
-    const toolCalls = message.tool_calls;
-
-    if (!toolCalls || toolCalls.length === 0) {
-      debug("model returned final answer (no tool calls)", truncate(message.content));
-      return { message: stripMarkdown(message.content ?? ""), meta };
+    if (turn.toolCalls.length === 0) {
+      debug("model returned final answer (no tool calls)", truncate(turn.content));
+      return { message: stripMarkdown(turn.content), meta };
     }
 
     debug(
-      `model requested ${toolCalls.length} tool call(s)`,
-      toolCalls.map((c) => c.function.name)
+      `model requested ${turn.toolCalls.length} tool call(s)`,
+      turn.toolCalls.map((c) => c.name)
     );
 
-    conversation.push(message);
+    conversation.push({
+      role: "assistant",
+      content: turn.content || null,
+      tool_calls: turn.toolCalls.map((c) => ({
+        id: c.id,
+        type: "function" as const,
+        function: { name: c.name, arguments: c.arguments },
+      })),
+    });
 
-    for (const call of toolCalls) {
-      const name = call.function.name;
+    for (const call of turn.toolCalls) {
+      const name = call.name;
       let args: Record<string, unknown>;
       try {
-        args = JSON.parse(call.function.arguments || "{}");
+        args = JSON.parse(call.arguments || "{}");
       } catch {
         args = {};
       }
@@ -303,6 +337,12 @@ export async function runAgent(
       }
       if (name === "remember_vehicle" && result.remembered) {
         meta.profile = { ...meta.profile, vehicle: result.vehicle as string };
+      }
+      if (name === "request_feedback" && result.feedbackRequested) {
+        meta.feedbackRequested = true;
+      }
+      if (name === "confirm_vehicle" && result.confirmationDisplayed) {
+        meta.vehicleToConfirm = result.vehicle as string;
       }
       conversation.push({
         role: "tool",

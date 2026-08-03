@@ -119,6 +119,43 @@ export const toolDefinitions: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "confirm_vehicle",
+      description:
+        "Show Yes/No buttons asking the customer to confirm a vehicle before troubleshooting. Call this when a vehicle is already on file (KNOWN CUSTOMER VEHICLE) but the customer has not restated it in this conversation — never assume the saved vehicle is the one they're asking about now. Do not use this when no vehicle is known; ask for it in text instead.",
+      parameters: {
+        type: "object",
+        properties: {
+          vehicle: {
+            type: "string",
+            description: "The vehicle to confirm, e.g. 'BMW X4 35i (N55)'.",
+          },
+        },
+        required: ["vehicle"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "request_feedback",
+      description:
+        "Show satisfaction-rating buttons (very helpful / somewhat helpful / not helpful) in the chat UI. Call this in the same turn after you have delivered full step-by-step repair instructions, or after telling the customer their service case was created. Do not call it after clarifying questions or partial answers.",
+      parameters: {
+        type: "object",
+        properties: {
+          reason: {
+            type: "string",
+            enum: ["instructions_given", "case_created"],
+            description: "What the customer is rating.",
+          },
+        },
+        required: ["reason"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_service_case_history",
       description:
         "Retrieve the customer's past service cases (ID, vehicle, summary, severity, status, creation date). Call this whenever the customer asks about their previous, existing, or open service requests or case status.",
@@ -183,7 +220,7 @@ export async function executeTool(
         vehicle: String(args.vehicle ?? "unknown"),
         summary: String(args.summary ?? ""),
         severity: (args.severity as CaseSeverity) ?? "medium",
-        note: "Choice buttons (service case vs. fix it myself) are now shown to the customer. Give only your brief diagnosis summary with sources, then end your turn and wait for their choice.",
+        note: "Choice buttons (service case vs. fix it myself) are now shown to the customer. Give your brief diagnosis summary with sources, ending with your recommendation on whether this is DIY-feasible or better handled by a technician (and why), then end your turn and wait for their choice.",
       };
     }
     case "propose_service_case": {
@@ -193,6 +230,20 @@ export async function executeTool(
         summary: String(args.summary ?? ""),
         severity: (args.severity as CaseSeverity) ?? "medium",
         note: "Confirmation buttons are now shown to the customer. Briefly explain why you recommend a service case, then end your turn and wait for their decision.",
+      };
+    }
+    case "confirm_vehicle": {
+      return {
+        confirmationDisplayed: true,
+        vehicle: String(args.vehicle ?? ""),
+        note: "Yes/No vehicle-confirmation buttons are now shown. Ask one short confirmation question (e.g. 'Just to confirm, is this about your BMW X4 35i?'), then end your turn and wait.",
+      };
+    }
+    case "request_feedback": {
+      return {
+        feedbackRequested: true,
+        reason: String(args.reason ?? "instructions_given"),
+        note: "Satisfaction buttons are now shown to the customer. Finish your response normally; do not ask for a rating in text.",
       };
     }
     case "get_service_case_history": {
