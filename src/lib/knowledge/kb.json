@@ -1,0 +1,130 @@
+[
+  {
+    "id": "brake-repair-warning",
+    "title": "Brake Repair Safety Warning",
+    "topic": "safety",
+    "vehicle": "all",
+    "source": "5 Car Problems You Shouldn't Try To Fix Yourself, p. 1",
+    "content": "Brake systems are critical for vehicle safety. Newer vehicle models have increasingly complex braking systems, and specialized training is required for the proper replacement of components like rotors and brake pads. It is not advisable for the average car owner to perform these repairs themselves. Improperly serviced brakes can lead to catastrophic failure and serious accidents; therefore, brake work should always be handled by a certified auto mechanic."
+  },
+  {
+    "id": "windscreen-replacement-warning",
+    "title": "Windscreen Replacement Risks",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "5 Car Problems You Shouldn't Try To Fix Yourself, p. 1",
+    "content": "Windshield replacement is not a simple task of removing and inserting glass. It requires specific tools and specialized adhesives to be installed correctly. If the process is not followed precisely, the windshield may not be secure, likely leading to the need for another replacement in the near future. It is best to have this work done by professionals."
+  },
+  {
+    "id": "engine-problem-professional-service",
+    "title": "Engine Repair Complexity",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "5 Car Problems You Shouldn't Try To Fix Yourself, p. 1",
+    "content": "Engines are among the most critical components of a vehicle, and modern engines are highly computerized. They are not suitable for a 'trial and error' approach to repairs. If a vehicle experiences engine problems, it should be taken to an auto shop immediately to be diagnosed and repaired by a professional."
+  },
+  {
+    "id": "transmission-repair-complexity",
+    "title": "Transmission Repair Complexity",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "5 Car Problems You Shouldn't Try To Fix Yourself, p. 2",
+    "content": "Car transmissions are among the most complex repairs a vehicle can undergo, involving many intricate components. Proper understanding of the entire transmission system is required for repair, which makes DIY work practically impossible. As cars evolve, newer models feature even more complicated transmissions. Replacing or repairing these systems requires high-tech equipment and technical expertise that only professional mechanics possess."
+  },
+  {
+    "id": "airbag-replacement-risks",
+    "title": "Airbag Replacement Dangers",
+    "topic": "safety",
+    "vehicle": "all",
+    "source": "5 Car Problems You Shouldn't Try To Fix Yourself, p. 2",
+    "content": "Airbag replacement is a major undertaking that should only be performed by expert mechanics. The labor-intensive process involves more than just swapping out the airbag; it often requires the removal and replacement of the dashboard because it covers the airbag system. Furthermore, even if an owner successfully installs a replacement, there is no way to verify if the system will correctly deploy in the event of an actual accident."
+  },
+  {
+    "id": "tire-deflation-causes-no-puncture",
+    "title": "Causes of Tire Deflation Without Visible Punctures",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "5 Reasons Why Tires Lose Air, Even With No Visible Punctures, p. 1-3",
+    "content": "Tires can lose air pressure even without a visible puncture. Common causes include: 1. Temperature fluctuations, as air expands or contracts with temperature changes, causing pressure to drop in colder months. 2. Permeation, where air molecules gradually escape through the tire's rubber sidewalls over time, which is a natural occurrence. 3. Valve and valve stem issues, where the valve stem or core deteriorates, leading to slow leaks. 4. Wheel damage, such as corrosion or a bent rim, which creates small gaps between the tire bead and the wheel surface, allowing air to escape. This is particularly common with low-profile tires—like the premium Goodyear Eagle Touring in a 19-inch fitment—after hitting a pothole. 5. Tire bead leaks, where the inner edge of the tire that seals against the rim is damaged or not set properly, causing air to leak. Other possibilities include a hole in the tread or sidewall, or a malfunctioning repair."
+  },
+  {
+    "id": "tire-leak-diagnostic-method",
+    "title": "Diagnosing Tire Leaks",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "5 Reasons Why Tires Lose Air, Even With No Visible Punctures, p. 3-4",
+    "content": "To locate a tire leak, use the soap and water test. Spray the tire with a solution consisting of 20% detergent and water and watch for bubbles, especially around the valve stem, tire bead, and tread area. It is best to perform this test while the tires are at full pressure and still warm from driving, as heat can expand tiny pinhole punctures, forcing air out more forcefully. If the leak is not visible while the tire is mounted, remove the wheel and submerge the entire tire and wheel assembly in a water bucket. If the tire is old, leaking in multiple areas, or has a compromised sidewall, the most cost-effective and safe solution is to replace the tire rather than attempting to repair it. For example, replacing a leaking tire with a new set, such as Goodyear Wrangler SR-A tires for trucks or SUVs, ensures safety on the highway."
+  },
+  {
+    "id": "tire-maintenance-best-practices",
+    "title": "Tire Maintenance Best Practices",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "5 Reasons Why Tires Lose Air, Even With No Visible Punctures, p. 4",
+    "content": "Regular maintenance is the best defense against tire deflation. Routinely check tire pressure using a reliable gauge to ensure it matches the manufacturer's recommendation found in the owner's manual. Inspect tires frequently for any visible punctures, cuts, or damage, and have these issues repaired promptly if safe to do so. Additionally, perform valve stem maintenance by inspecting stems and caps for wear and replacing them if necessary. Periodically inspect wheels for damage, corrosion, or irregularities that could affect the seal. Finally, consider professional inspections and tire rotations to ensure even wear and proper sealing. Tires older than six years should be monitored closely for age-related deterioration, such as tiny cracks or pores in the sidewall."
+  },
+  {
+    "id": "bmw-ac-troubleshooting-guide",
+    "title": "BMW Air Conditioning Troubleshooting",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "BMW AC Not Working? The Ultimate Troubleshooting Guide to Common Problems, p. 1-2",
+    "content": "Troubleshooting BMW AC issues begins with identifying symptoms. 1. Blowing warm air is often caused by low refrigerant or compressor failure. Visually inspect AC aluminum lines for oily residue, which indicates a leak. Perform a pressure check using a manifold gauge set or a UV dye test. If the AC compressor clutch fails to engage when the snowflake button is pressed, the clutch may be burnt or not receiving 12V power. 2. Air blowing at only one speed usually points to a failing Final Stage Resistor (FSR), often called the 'hedgehog.' Symptoms include wildly fluctuating fan speeds or the fan remaining on after the car is turned off, which can drain the battery. The FSR is typically located behind the glovebox or in the driver-side footwell and takes about 45 minutes to replace. 3. A musty, vinegar-like smell suggests bacterial growth in the evaporator, treatable with cleaning foam. 4. Intermittent cooling may indicate an overheating engine or faulty pressure switch. 5. If no air blows, check fuses in the glovebox, trunk, or under the hood. 6. An Auxiliary Fan failure can cause the AC to be cold while driving but warm when stopped at a red light. 7. Heater valve issues or a damaged/missing ambient temperature sensor (which might display -40°F) can also disable the AC."
+  },
+  {
+    "id": "bmw-ac-maintenance-tips",
+    "title": "BMW Air Conditioning Maintenance Tips",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "BMW AC Not Working? The Ultimate Troubleshooting Guide to Common Problems, p. 2",
+    "content": "To maintain the health of your BMW's AC system, run it for at least 10 minutes once a month during the winter; this keeps internal seals lubricated and prevents refrigerant from settling. Regularly replace the cabin air filter to prevent airflow restriction, which puts unnecessary strain on the blower motor and Final Stage Resistor (FSR). Additionally, clean the front of the condenser with a low-pressure hose to remove bugs and dirt, ensuring maximum heat exchange."
+  },
+  {
+    "id": "bmw-battery-removal-procedure",
+    "title": "BMW Battery Removal and Replacement",
+    "topic": "battery",
+    "vehicle": "all",
+    "source": "HOW TO REMOVE A CAR BATTERY FROM A BMW, p. 1-2",
+    "content": "Most new BMW vehicles have their battery located in the trunk on the right side, beneath the upholstery. Before beginning, wear rubber safety gloves and safety glasses. Remove jewelry such as watches and necklaces. 1. Disconnect the negative battery terminal using a 10 mm socket wrench. Secure the cable so it does not touch any metal or the other cable; use a zip tie and cloth covering if necessary. 2. Disconnect the positive terminal next. 3. Remove the battery bracket using a 13 mm socket. 4. Remove the old battery and insert the new one. Retighten the brackets, but do not overtighten, as this risks cracking the battery casing. 5. Clean the terminal connectors before reconnecting. 6. Connect the positive terminal first, then the negative. If your BMW is a 2002 model year or later, the new battery may need to be registered with the vehicle's computer. It is recommended to use an anti-corrosion gel on the terminals during reinstallation."
+  },
+  {
+    "id": "oil-burning-smell-causes",
+    "title": "Diagnosing Burning Oil Smells",
+    "topic": "oil-change",
+    "vehicle": "all",
+    "source": "Why Does A Car Smell Like Burning Oil (Transcript) & Why Does My Car Smell Like Burning Oil (Blog), p. 1-5",
+    "content": "A burning oil smell in the cabin often indicates oil leaking onto hot engine components. Causes include: 1. Oil leaks dripping onto hot surfaces like the exhaust manifold or catalytic converter. 2. Worn valve cover gaskets, which allow oil to leak and drip onto hot components. 3. Loose or damaged oil filters or drain plugs from an improper oil change. If the drain plug is not tightened correctly, it allows oil to drip. 4. Blown head gasket, allowing oil to drip between the cylinder head and engine block onto hot components. 5. Overfilled oil during an oil change, which can foam up and cause heat/friction or spill onto the engine, taking time to burn off. 6. Engine overheating or worn piston rings, allowing oil to burn within the combustion chamber, often accompanied by blue exhaust smoke. If the smell persists, stop the vehicle, open the hood, and inspect for oil residue, wet spots, or smoke. Monitor engine temperature, as spikes can indicate overheating. If the smell is accompanied by visible smoke, oil pooling, or persists after cleaning the engine bay, contact a professional mechanic."
+  },
+  {
+    "id": "diy-vs-pro-repair-decision-guide",
+    "title": "DIY vs. Professional Auto Repair Decision Guide",
+    "topic": "general-maintenance",
+    "vehicle": "all",
+    "source": "DIY Fixes vs. Professional Auto Repairs: When to Call a Mechanic, p. 2-6",
+    "content": "DIY auto repair is suitable for low-risk tasks such as replacing wiper blades, swapping engine or cabin air filters, replacing simple bulbs, and topping off fluids. A basic starter kit, including screwdrivers, pliers, a torque wrench, jack and jack stands, wheel chocks, gloves, flashlight, rags, and the vehicle's repair manual, is required. However, complex repairs should be handled by a professional. Never attempt to repair brake systems (pads, rotors, hydraulic issues, ABS diagnostics), transmission repairs, or electrical diagnostics involving module programming. Suspension repairs (tie rods, control arms, struts, and post-repair alignment) and diesel engine repairs (high-pressure fuel systems, turbochargers) also require professional training and specialized tools. Incorrect attempts at these repairs can lead to safety risks, voided warranties, or severe engine damage. If the repair involves safety systems, special calibration, or if you are guessing the cause of an issue, book a professional inspection."
+  },
+  {
+    "id": "n55-spark-plug-and-coil-change",
+    "title": "N55 Engine Spark Plug and Ignition Coil Replacement Procedure",
+    "topic": "ignition-coils",
+    "vehicle": "BMW X4 35i (N55)",
+    "source": "YouTube: Help Me DIY — BMW N55 Spark Plug and Coil Change | DIY on X4 M40i (F26) or M2 (F87)",
+    "content": "To replace the N55 engine spark plugs and ignition coils, start by removing the plastic ignition cover, which is held in place by small plastic plugs. Next, loosen the clean air pipe using a 7mm and 6mm fastener. Release the connector on the hot-film air mass meter to allow for clearance. The engine cover includes a channel for cables; slide this channel back to expose the T25 screws holding the harness rails. Use a T25 driver to remove these six captured screws, then unclip any obstructing wires. Disconnect the oxygen sensors by pulling apart the metal tabs and removing the metal bracket with a T30 bolt. To remove ignition coils, lift the small lever on the electrical connector to push the plug out, then pull the coil straight out. Note that a BMW TSB suggests some corrosion on removed coil packs is acceptable due to moisture; the new Bosch spark plugs come pre-gapped. When installing new plugs, thread them by hand to avoid cross-threading, then tighten them to 23 Newton meters or 17 foot-pounds using a torque wrench. Do not use anti-seize, as it acts as a torque multiplier and can result in overtightening. Finally, ensure all electrical connectors are fully seated and latched."
+  },
+  {
+    "id": "n55-safety-precautions-for-spark-plug-change",
+    "title": "Safety and Maintenance Best Practices for N55 Ignition Service",
+    "topic": "safety",
+    "vehicle": "BMW X4 35i (N55)",
+    "source": "YouTube: Help Me DIY — BMW N55 Spark Plug and Coil Change | DIY on X4 M40i (F26) or M2 (F87)",
+    "content": "When performing ignition system maintenance on an N55 engine, take several precautions. Before removing spark plugs, blow out the area with compressed air or use a vacuum to ensure no debris falls into the cylinder head. Keep a clean rag stuffed in the opening while moving between cylinders to prevent contamination. When installing coils, ensure the lightning bolt icon on the connector lines up with the channel on the coil to ensure it is seated correctly and facing the right direction. Additionally, be aware of fuel system hazards; the service manual warns not to let the ignition components come into contact with fuel, as it can damage seals. Perform all work when the engine is not hot to avoid injury. Always exercise caution and perform work at your own risk, ensuring you feel confident in the process before starting."
+  },
+  {
+    "id": "n55-maintenance-fcp-euro-parts-guarantee",
+    "title": "FCP Euro Lifetime Replacement Guarantee for N55 Components",
+    "topic": "general-maintenance",
+    "vehicle": "BMW X4 35i (N55)",
+    "source": "YouTube: Help Me DIY — BMW N55 Spark Plug and Coil Change | DIY on X4 M40i (F26) or M2 (F87)",
+    "content": "For N55 ignition service, using a dedicated ignition service kit is recommended. Parts sourced from FCP Euro offer a lifetime replacement guarantee. This means that if you use these products—such as spark plugs or oil—you can send back the old, used components once they reach the end of their service life, and receive a refund. This allows you to purchase the parts for the life of your car, which is a policy supported by the vendor. The entire kit typically costs around $200."
+  }
+]
