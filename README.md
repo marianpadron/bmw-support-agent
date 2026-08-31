@@ -1,3 +1,7 @@
+# BMW Support Agent
+
+An AI support agent that troubleshoots BMW maintenance issues using a curated knowledge base (RAG), tool calling, streaming responses, and human-in-the-loop escalation to a simulated service case when it can't safely resolve something.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
