@@ -30,3 +30,7 @@ export function createCase(input: {
 export function listCases(): ServiceCase[] {
   return [...cases.values()];
 }
+
+export function clearCases(): void {
+  cases.clear();
+}

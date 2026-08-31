@@ -1,4 +1,4 @@
-import { createCase, listCases, type CaseSeverity } from "@/lib/cases";
+import { clearCases, createCase, listCases, type CaseSeverity } from "@/lib/cases";
 
 const SEVERITIES: CaseSeverity[] = ["low", "medium", "high"];
 
@@ -26,4 +26,9 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return Response.json({ cases: listCases() });
+}
+
+export async function DELETE() {
+  clearCases();
+  return Response.json({ cleared: true });
 }

@@ -258,6 +258,26 @@ export default function Chat() {
     await requestAgentReply(history);
   }
 
+  // Full reset: wipe all persisted memory (vehicle profile, case history) and
+  // every piece of in-flight conversation state, returning to a fresh session.
+  function restartSession() {
+    if (loading) return;
+    // Also wipe the server-side case store, otherwise get_service_case_history
+    // would resurface this session's cases after the "fresh" start.
+    fetch("/api/cases", { method: "DELETE" }).catch(() => {});
+    window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+    window.localStorage.removeItem(CASES_STORAGE_KEY);
+    setProfile({});
+    setCaseHistory([]);
+    setMessages([WELCOME_MESSAGE]);
+    setInput("");
+    setPendingProposal(null);
+    setPendingOptions(null);
+    setPendingFeedback(false);
+    setPendingVehicleConfirm(null);
+    setShowPreferences(false);
+  }
+
   // Not wired to a backend yet: the rating is recorded into the conversation
   // history so it rides along on future requests and can later be logged and
   // joined against transcripts to analyze model performance vs. satisfaction.
@@ -499,6 +519,12 @@ export default function Chat() {
               )}
             </div>
           </div>
+          <button
+            onClick={restartSession}
+            className="mt-4 w-full rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+          >
+            Restart
+          </button>
         </div>
       )}
 

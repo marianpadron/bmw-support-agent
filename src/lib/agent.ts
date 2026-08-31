@@ -1,5 +1,5 @@
-import Groq from "groq-sdk";
-import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
+import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { ServiceCase } from "./cases";
 import { executeTool, toolDefinitions, type ToolContext } from "./tools";
 import { debug } from "./debug";
@@ -36,7 +36,24 @@ export interface AgentResult {
   };
 }
 
-const MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
+// Provider gateway: both providers speak the OpenAI chat-completions dialect
+// (Gemini via its OpenAI-compatibility endpoint), so the same client, loop,
+// and tool schemas work for either. Switch with LLM_PROVIDER=gemini|groq.
+const PROVIDERS = {
+  gemini: {
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    apiKeyEnv: "GEMINI_API_KEY",
+    defaultModel: "gemini-flash-latest",
+  },
+  groq: {
+    baseURL: "https://api.groq.com/openai/v1",
+    apiKeyEnv: "GROQ_API_KEY",
+    defaultModel: "openai/gpt-oss-120b",
+  },
+} as const;
+
+const PROVIDER = PROVIDERS[(process.env.LLM_PROVIDER as keyof typeof PROVIDERS) ?? "gemini"];
+const MODEL = process.env.LLM_MODEL ?? PROVIDER.defaultModel;
 const MAX_ITERATIONS = 5;
 
 const SYSTEM_PROMPT = `
@@ -72,6 +89,8 @@ const SYSTEM_PROMPT = `
   * EXCEPTIONS — skip offer_next_steps:
     * Direct how-to requests ("how do I replace my ignition coils?") get the full procedure immediately.
     * Safety risks, professional-only repairs, knowledge-base gaps, or a customer who already said they lack the tools: use propose_service_case instead, since DIY is not an appropriate option.
+  * ALWAYS after delivering step-by-step instructions (whether from a DIY choice or a direct how-to request): end your response with one short sentence reminding the customer that if they get stuck or run into trouble at any point, you can create a service case to have a technician help. Never omit this closing reminder.
+  * If the customer later says they are stuck, something broke, or they cannot complete a step, call propose_service_case.
 
   FOLLOW-UP QUESTION RULES:
 
@@ -146,7 +165,7 @@ function detectSafetyConcern(message: string): string | undefined {
   return SAFETY_PATTERNS.find(({ pattern }) => pattern.test(message))?.concern;
 }
 
-function toGroqMessages(messages: ChatMessage[]): ChatCompletionMessageParam[] {
+function toProviderMessages(messages: ChatMessage[]): ChatCompletionMessageParam[] {
   return messages.map((m) => ({ role: m.role, content: m.content }));
 }
 
@@ -195,7 +214,15 @@ export function stripMarkdown(text: string): string {
 
 interface AssembledTurn {
   content: string;
-  toolCalls: { id: string; name: string; arguments: string }[];
+  toolCalls: {
+    id: string;
+    name: string;
+    arguments: string;
+    // Gemini (via its OpenAI-compat endpoint) attaches a thought signature in
+    // extra_content and requires it to be echoed back with the tool call in
+    // the follow-up request — dropping it gets a 400.
+    extraContent?: unknown;
+  }[];
 }
 
 // Every call streams: we can't know a turn is final until we see whether it
@@ -204,7 +231,7 @@ interface AssembledTurn {
 // Also retries on "tool_use_failed" (a malformed model tool call — a model
 // output problem, not a request problem), but only if nothing was streamed yet.
 async function streamCompletion(
-  groq: Groq,
+  client: OpenAI,
   conversation: ChatCompletionMessageParam[],
   onDelta?: (text: string) => void,
   retries = 2
@@ -213,14 +240,19 @@ async function streamCompletion(
     let content = "";
     const toolCalls: AssembledTurn["toolCalls"] = [];
     try {
-      const stream = await groq.chat.completions.create({
+      const stream = await client.chat.completions.create({
         model: MODEL,
         messages: conversation,
         tools: toolDefinitions,
         tool_choice: "auto",
         stream: true,
+        // Explicit output budget: Gemini counts thinking tokens toward the
+        // cap, and the provider default can truncate long procedures.
+        max_tokens: 8192,
       });
+      let finishReason: string | null = null;
       for await (const chunk of stream) {
+        if (chunk.choices[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason;
         const delta = chunk.choices[0]?.delta;
         if (!delta) continue;
         if (delta.content) {
@@ -228,14 +260,36 @@ async function streamCompletion(
           onDelta?.(delta.content);
         }
         for (const tc of delta.tool_calls ?? []) {
-          const i = tc.index ?? 0;
+          // Groq/OpenAI fragment calls and identify them by `index`; Gemini's
+          // compat endpoint omits `index` and sends each call whole with an
+          // `id` — treat an id (or the very first delta) as a new call.
+          let i: number;
+          if (typeof tc.index === "number") {
+            i = tc.index;
+          } else if (tc.id || toolCalls.length === 0) {
+            i = toolCalls.length;
+          } else {
+            i = toolCalls.length - 1;
+          }
           toolCalls[i] ??= { id: "", name: "", arguments: "" };
           if (tc.id) toolCalls[i].id = tc.id;
           if (tc.function?.name) toolCalls[i].name += tc.function.name;
           if (tc.function?.arguments) toolCalls[i].arguments += tc.function.arguments;
+          const extra = (tc as { extra_content?: unknown }).extra_content;
+          if (extra) toolCalls[i].extraContent = extra;
         }
       }
-      return { content, toolCalls: toolCalls.filter(Boolean) };
+      if (finishReason && finishReason !== "stop" && finishReason !== "tool_calls") {
+        debug(`WARNING: stream ended with finish_reason=${finishReason} (output may be truncated)`);
+      }
+      return {
+        content,
+        // Gemini's compat endpoint may omit tool-call ids; the follow-up
+        // request needs matching non-empty ids, so synthesize them.
+        toolCalls: toolCalls
+          .filter(Boolean)
+          .map((c, i) => ({ ...c, id: c.id || `call_${i}` })),
+      };
     } catch (error) {
       const code = (error as { error?: { error?: { code?: string } } })?.error?.error?.code;
       if (code === "tool_use_failed" && attempt < retries && content.length === 0) {
@@ -253,7 +307,10 @@ export async function runAgent(
   caseHistory: ServiceCase[] = [],
   onDelta?: (text: string) => void
 ): Promise<AgentResult> {
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  const client = new OpenAI({
+    apiKey: process.env[PROVIDER.apiKeyEnv],
+    baseURL: PROVIDER.baseURL,
+  });
 
   debug("incoming user message", messages.at(-1)?.content);
 
@@ -271,19 +328,34 @@ export async function runAgent(
 
   const conversation: ChatCompletionMessageParam[] = [
     { role: "system", content: systemPrompt },
-    ...toGroqMessages(messages),
+    ...toProviderMessages(messages),
   ];
 
   const meta: AgentResult["meta"] = { toolCallsMade: [] };
 
+  const spoken: string[] = [];
+
   for (let i = 0; i < MAX_ITERATIONS; i++) {
-    debug(`--- iteration ${i + 1}/${MAX_ITERATIONS}: calling Groq (streaming) ---`);
-    const turn = await streamCompletion(groq, conversation, onDelta);
+    debug(`--- iteration ${i + 1}/${MAX_ITERATIONS}: calling LLM (streaming) ---`);
+
+    let firstDeltaOfTurn = true;
+    const turnDelta = onDelta
+      ? (text: string) => {
+          if (firstDeltaOfTurn && spoken.length > 0) onDelta("\n\n");
+          firstDeltaOfTurn = false;
+          onDelta(text);
+        }
+      : undefined;
+
+    const turn = await streamCompletion(client, conversation, turnDelta);
 
     if (turn.toolCalls.length === 0) {
       debug("model returned final answer (no tool calls)", truncate(turn.content));
-      return { message: stripMarkdown(turn.content), meta };
+      const fullReply = [...spoken, turn.content].filter(Boolean).join("\n\n");
+      return { message: stripMarkdown(fullReply), meta };
     }
+
+    if (turn.content.trim()) spoken.push(turn.content);
 
     debug(
       `model requested ${turn.toolCalls.length} tool call(s)`,
@@ -297,6 +369,9 @@ export async function runAgent(
         id: c.id,
         type: "function" as const,
         function: { name: c.name, arguments: c.arguments },
+        // Echo Gemini's thought signature back (required by Gemini 3 models;
+        // unknown fields are ignored by other providers).
+        ...(c.extraContent ? { extra_content: c.extraContent } : {}),
       })),
     });
 
@@ -353,9 +428,10 @@ export async function runAgent(
   }
 
   debug(`hit MAX_ITERATIONS (${MAX_ITERATIONS}) without a final answer`);
+  const fallback =
+    "I wasn't able to finish working through that. Could you rephrase, or would you like me to create a service case for a technician to review?";
   return {
-    message:
-      "I wasn't able to finish working through that. Could you rephrase, or would you like me to create a service case for a technician to review?",
+    message: stripMarkdown([...spoken, fallback].join("\n\n")),
     meta,
   };
 }

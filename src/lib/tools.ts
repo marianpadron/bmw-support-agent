@@ -1,4 +1,4 @@
-import type { ChatCompletionTool } from "groq-sdk/resources/chat/completions";
+import type { ChatCompletionTool } from "openai/resources/chat/completions";
 import { createCase, listCases, type CaseSeverity, type ServiceCase } from "./cases";
 import { createRetriever } from "./knowledge/keywordRetriever";
 
@@ -243,7 +243,7 @@ export async function executeTool(
       return {
         feedbackRequested: true,
         reason: String(args.reason ?? "instructions_given"),
-        note: "Satisfaction buttons are now shown to the customer. Finish your response normally; do not ask for a rating in text.",
+        note: "Satisfaction buttons are now shown to the customer. Finish your response normally; do not ask for a rating in text. If this turn delivered repair instructions, remember to end with the one-sentence reminder that a service case can be created if they get stuck.",
       };
     }
     case "get_service_case_history": {
